@@ -9,4 +9,6 @@ object Protocol {
       to: Currency
   )
 
+  final case class GetCurrenciesRequest()
+
 }

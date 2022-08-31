@@ -11,7 +11,10 @@ class Program[F[_]: Functor](
 ) extends Algebra[F] {
 
   override def get(request: Protocol.GetRatesRequest): F[Error Either Rate] =
-    EitherT(ratesService.get(Rate.Pair(request.from, request.to))).leftMap(toProgramError(_)).value
+    EitherT(ratesService.getRate(Rate.Pair(request.from, request.to))).leftMap(toProgramError(_)).value
+
+  override def get(request: Protocol.GetCurrenciesRequest): F[Error Either Currencies] =
+    EitherT(ratesService.getCurrencies()).leftMap(toProgramError(_)).value
 
 }
 

@@ -17,11 +17,15 @@ object Protocol {
       to: Currency
   )
 
-  final case class GetApiResponse(
+  final case class RatesApiResponse(
       from: Currency,
       to: Currency,
       price: Price,
       timestamp: Timestamp
+  )
+
+  final case class CurrenciesApiResponse(
+      currencies: Currencies
   )
 
   implicit val currencyEncoder: Encoder[Currency] =
@@ -33,7 +37,10 @@ object Protocol {
   implicit val rateEncoder: Encoder[Rate] =
     deriveConfiguredEncoder[Rate]
 
-  implicit val responseEncoder: Encoder[GetApiResponse] =
-    deriveConfiguredEncoder[GetApiResponse]
+  implicit val rateResponseEncoder: Encoder[RatesApiResponse] =
+    deriveConfiguredEncoder[RatesApiResponse]
+
+  implicit val currenciesResponseEncoder: Encoder[CurrenciesApiResponse] =
+    deriveConfiguredEncoder[CurrenciesApiResponse]
 
 }
