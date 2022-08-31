@@ -1,7 +1,7 @@
 import Dependencies._
 
 name := "forex"
-version := "1.0.1"
+version := "1.0.2"
 
 scalaVersion := "2.13.5"
 scalacOptions ++= Seq(
