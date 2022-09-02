@@ -31,8 +31,8 @@ object HttpVerySimple {
   def httpGet(url: String, connectTimeout: Int = 5000, readTimeout: Int = 5000, reqProp: Seq[(String, String)] = Seq.empty): String = {
     val connection: HttpURLConnection = new URL(url).openConnection.asInstanceOf[HttpURLConnection]
     connection.setConnectTimeout(connectTimeout)
-    connection.setReadTimeout(readTimeout)
-    println("readTimeout="+ connection.getReadTimeout)
+    connection.setReadTimeout(readTimeout) // TODO setting seems to be ignored
+//    println("readTimeout="+ connection.getReadTimeout)
     connection.setRequestMethod("GET")
     for(prop <- reqProp) connection.setRequestProperty(prop._1,prop._2)
     val inputStream = connection.getInputStream
@@ -43,11 +43,10 @@ object HttpVerySimple {
 
   @throws(classOf[java.io.IOException])
   @throws(classOf[java.net.SocketTimeoutException])
-  def httpGetStream[R](url: String, reader: java.io.InputStream => R, connectTimeout: Int = 5000, readTimeout: Int = 5000, requestMethod: String = "GET", reqProp: Seq[(String, String)] = Seq.empty): R = {
+  def httpGetStream[R](url: String, reader: java.io.InputStream => R, connectTimeout: Int = 5000, readTimeout: Int = 0, requestMethod: String = "GET", reqProp: Seq[(String, String)] = Seq.empty): R = {
     val connection: HttpURLConnection = new URL(url).openConnection.asInstanceOf[HttpURLConnection]
     connection.setConnectTimeout(connectTimeout)
-    connection.setReadTimeout(readTimeout)
-    println("readTimeout=" + connection.getReadTimeout)
+    connection.setReadTimeout(readTimeout) // TODO this setting seems to be ignored
     connection.setRequestMethod(requestMethod)
     for (prop <- reqProp) connection.setRequestProperty(prop._1, prop._2)
     val inputStream = connection.getInputStream

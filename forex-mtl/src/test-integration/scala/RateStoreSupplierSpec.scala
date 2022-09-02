@@ -7,13 +7,11 @@ final class RateStoreSupplierSpec extends UnitSpec {
   it should "fill ratesStore with rates fetched from OneFrame" in {
 
     val oneFrame = new OneFrameService()
-
     val ratesStore = new RatesStore()
-    val rrs = new RatesStoreSupplier(ratesStore, oneFrame)
+    val rss = new RatesStoreSupplier(ratesStore, oneFrame).fill()
 
-    rrs.fill()
     // check all ccyPairs were fetched
-    for(ccyPair <- rrs.ccyPairsToFetch)
+    for(ccyPair <- rss.ccyPairsToFetch)
       {
          val rateO:Option[Rate] = ratesStore.get(ccyPair)
          rateO.get.ccyPair should be (ccyPair)
