@@ -17,11 +17,18 @@ final class OneFrameHttpSpec extends UnitSpec {
 
     val replyNoAuth = HttpVerySimple.httpGet(ROOT + "rates?pair=NZDUSD") // i.e. "http://localhost:8080/rates?pair=NZDUSD"
 
-    replyNoAuth should be("{\"error\":\"Forbidden\"}")
+//    replyNoAuth should be("{\"error\":\"Forbidden\"}")
+    replyNoAuth should be("""
+    {"error":"Forbidden"}
+    """)
 
     val reply = HttpVerySimple.httpGet(ROOT + "rates?pair=NZDUSD",reqProp = authReqProp)
 
-    reply should startWith("[{\"from\":\"NZD\",\"to\":\"USD\",\"bid\"")
+//    reply should startWith("[{\"from\":\"NZD\",\"to\":\"USD\",\"bid\"")
+    reply should startWith("""
+    [{"from":"NZD","to":"USD","bid\")
+    """)
+
   }
 
   // rates streaming get from OneFrame should retieve a stream of rates if authorized

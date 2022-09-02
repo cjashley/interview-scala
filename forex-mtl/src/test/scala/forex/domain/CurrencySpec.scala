@@ -23,6 +23,12 @@ class CurrencySpec extends UnitSpec with should.Matchers {
       Currency.fromString(c.toString) should be(c)  // should be test format
       assert(Currency.fromString(c.toString) == c)  // plain assert version
     }
+    }
 
+  // test for learning scala, not needed unless changed to more specific exception
+  it should "throw MatchError if invalid currency" in {
+    intercept[NoSuchElementException] {
+      Currency.fromString("UNKNOWN")
+    }
   }
 }
