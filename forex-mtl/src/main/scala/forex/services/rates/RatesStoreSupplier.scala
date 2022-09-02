@@ -7,7 +7,7 @@ class RatesStoreSupplier(rateStore: RatesStore, oneFrame: OneFrameService, ccyPa
 //  var ccyPairs = Seq("JPYNZD","JPYUSD")
 
   var log: Logger = System.getLogger(this.getClass.getName)
-
+  var ccyPairsToFetch: Seq[String] = ccyPairs
   def fill(): Unit =
   {
     for(ccyPair <- ccyPairs )

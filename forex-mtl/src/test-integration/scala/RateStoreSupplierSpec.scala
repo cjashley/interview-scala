@@ -1,14 +1,22 @@
 import forex.UnitSpec
-import forex.services.rates.OneFrameService
+import forex.services.rates.{OneFrameService, Rate, RatesStore, RatesStoreSupplier}
 
 final class RateStoreSupplierSpec extends UnitSpec {
-"A RateStoreSupplier" should "connect to OneFrame and return data"
+"A RateStoreSupplier" should "should supply up to date rates"
 
-  it should "get a rate with OneFrameService" in {
+  it should "fill ratesStore with rates fetched from OneFrame" in {
+
     val oneFrame = new OneFrameService()
 
-    val rate = oneFrame.getRate("NZDUSD")
+    val ratesStore = new RatesStore()
+    val rrs = new RatesStoreSupplier(ratesStore, oneFrame)
 
-    rate.ccyPair should be("NZDUSD")
+    rrs.fill()
+    // check all ccyPairs were fetched
+    for(ccyPair <- rrs.ccyPairsToFetch)
+      {
+         val rateO:Option[Rate] = ratesStore.get(ccyPair)
+         rateO.get.ccyPair should be (ccyPair)
+      }
   }
 }

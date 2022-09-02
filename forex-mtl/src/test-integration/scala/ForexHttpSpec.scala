@@ -23,8 +23,7 @@ final class ForexHttpSpec extends UnitSpec {
     reply should startWith("""{"from":"NZD","to":"USD","price"""")
   }
 
-
-  it should "reply with an error when request has no API token" in
+  it should "reply with an error when request has no API token"  taggedAs NotImplementedYet in
     {
 
       val replyNoAuth = HttpVerySimple.httpGet(ROOT + "rates?from=NZD&to=USD") // i.e. "http://localhost:8080/rates?pair=NZDUSD"
@@ -33,7 +32,7 @@ final class ForexHttpSpec extends UnitSpec {
     }
 
   // get one rate and then a second rate for the same currency pair, timestamp should be different, hopefully this indicates price will be too
-  it should "be updating rates with new prices" in
+  it should "be updating rates with new prices" taggedAs NotImplementedYet in
     {
 
       val reply1 = HttpVerySimple.httpGet(ROOT + "rates?from=NZD&to=USD", reqProp = authReqProp)
@@ -52,7 +51,7 @@ final class ForexHttpSpec extends UnitSpec {
       rate1.timestamp should not be rate2.timestamp
     }
 
-  it should "return invalid currency when given from XXX" in
+  it should "return invalid currency when given from XXX" taggedAs NotImplementedYet in
   {
     // At the moment (until implemented), returns Server returned HTTP response code: 500 for URL: http://localhost:8081/rates?from=XXX&to=USD
     val reply1 = HttpVerySimple.httpGet(ROOT + "rates?from=XXX&to=USD", reqProp = authReqProp)
