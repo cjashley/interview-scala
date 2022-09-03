@@ -1,5 +1,7 @@
 package forex.services.rates
 
+import forex.domain.Ccy.{CcyPair, CcyPairs}
+
 import java.lang.System.Logger
 
 class RatesStoreSupplier(rateStore: RatesStore, oneFrame: OneFrameService, ccyPairs: Seq[String] = Seq("JPYNZD","JPYUSD") ) {
@@ -7,7 +9,7 @@ class RatesStoreSupplier(rateStore: RatesStore, oneFrame: OneFrameService, ccyPa
 //  var ccyPairs = Seq("JPYNZD","JPYUSD")
 
   var log: Logger = System.getLogger(this.getClass.getName)
-  var ccyPairsToFetch: Seq[String] = ccyPairs
+  var ccyPairsToFetch: CcyPairs = ccyPairs
 
   def fill(): RatesStoreSupplier = {
     for (ccyPair <- ccyPairs) {
@@ -19,7 +21,7 @@ class RatesStoreSupplier(rateStore: RatesStore, oneFrame: OneFrameService, ccyPa
   }
 
   // TODO rates need refreshing as well
-  def add(ccyPair:String): Rate = {
+  def add(ccyPair:CcyPair): Rate = {
     ccyPairsToFetch = ccyPairsToFetch :+ ccyPair
     val rate = oneFrame.getRate(ccyPair) // TODO get could fail
     rateStore.rates += (ccyPair -> rate)

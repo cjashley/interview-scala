@@ -3,6 +3,7 @@ package forex.services.rates.interpreters
 import cats.Applicative
 import cats.syntax.applicative._
 import cats.syntax.either._
+import forex.domain.Ccy.CcyPair
 import forex.domain._
 import forex.services.rates.{Algebra, OneFrameService, RatesStore, RatesStoreSupplier}
 import forex.services.rates.errors._
@@ -18,7 +19,7 @@ class OneFrameDummy[F[_]: Applicative] extends Algebra[F] {
   private val logger:System.Logger = System.getLogger(this.getClass.getName)
   override def getRate(pair: Rate.Pair): F[Error Either Rate] =
     {
-      val ccyPair = s"${pair.from}${pair.to}"
+      val ccyPair:CcyPair = s"${pair.from}${pair.to}"
       val rateO = ratesStore.get(ccyPair)
       val r = if (rateO.isEmpty) rss.add(ccyPair) else {
         logger.log(Level.INFO,"rateStore rate "+rateO.get)

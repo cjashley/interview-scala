@@ -20,7 +20,7 @@ class OneFrameServiceSpec extends UnitSpec {
   {
     val oneFrame = new OneFrameService()
 
-    oneFrame.getRates(Seq ("NZDJPY","USDGBP") )
+    oneFrame.getStreamingRates(Seq ("NZDJPY","USDGBP") )
 
   }
 
