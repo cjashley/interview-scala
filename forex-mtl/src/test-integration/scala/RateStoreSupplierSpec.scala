@@ -4,11 +4,11 @@ import forex.services.rates.{OneFrameService, Rate, RatesStore, RatesStoreSuppli
 final class RateStoreSupplierSpec extends UnitSpec {
 "A RateStoreSupplier" should "should supply up to date rates"
 
-  it should "fill ratesStore with rates fetched from OneFrame" in {
+  private val oneFrame   = new OneFrameService()
+  private val ratesStore = new RatesStore()
+  private val rss        = new RatesStoreSupplier(ratesStore, oneFrame).fill()
 
-    val oneFrame = new OneFrameService()
-    val ratesStore = new RatesStore()
-    val rss = new RatesStoreSupplier(ratesStore, oneFrame).fill()
+  it should "fill ratesStore with rates fetched from OneFrame" in {
 
     // check all ccyPairs were fetched
     for(ccyPair <- rss.ccyPairsToFetch)
@@ -16,5 +16,12 @@ final class RateStoreSupplierSpec extends UnitSpec {
          val rateO:Option[Rate] = ratesStore.get(ccyPair)
          rateO.get.ccyPair should be (ccyPair)
       }
+  }
+
+  it should "be continuously updating rates with newer rates fetched from OneFrame" taggedAs NotImplementedYet in {
+
+    fail(NotImplementedYet.toString)
+//    rss.getRate("NZDUSD")
+
   }
 }

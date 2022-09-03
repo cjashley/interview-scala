@@ -16,4 +16,12 @@ class OneFrameServiceSpec extends UnitSpec {
   }
 
 
+  it should "get a stream of rates from OneFrame" taggedAs NotImplementedYet in
+  {
+    val oneFrame = new OneFrameService()
+
+    oneFrame.getRates(Seq ("NZDJPY","USDGBP") )
+
+  }
+
 }

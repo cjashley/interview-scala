@@ -71,4 +71,13 @@ final class ForexHttpSpec extends UnitSpec {
 
     reply1 should be("""{"error":"Invalid Currency XXX"}""")
   }
+
+  it should "return list of valid currencies"  in {
+    // At the moment (until implemented), returns Server returned HTTP response code: 500 for URL: http://localhost:8081/rates?from=XXX&to=USD
+    val reply1 = HttpVerySimple.httpGet(ROOT + "currencies", reqProp = authReqProp)
+
+    // {"currencies":["AUD","CAD","CHF","EUR","GBP","NZD","JPY","SGD","USD"]}
+    val expected = "{\"currencies\":[\"AUD\",\"CAD\",\"CHF\",\"EUR\",\"GBP\",\"NZD\",\"JPY\",\"SGD\",\"USD\"]}"
+    reply1 should be(expected)
+  }
 }

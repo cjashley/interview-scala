@@ -10,6 +10,7 @@ import scala.annotation.unused
 
 class OneFrameService(auth : String = "10dc303535874aeccc86a8251e6992f5") {
 
+
   val port = 8080
   val ROOT = s"http://localhost:$port/"
   val authReqProp: Seq[(String, String)] = Seq(Tuple2("token", auth))
@@ -37,8 +38,17 @@ class OneFrameService(auth : String = "10dc303535874aeccc86a8251e6992f5") {
     Rate(rateApi.from + rateApi.to, rateApi.price, timestamp)
   }
 
+  /**
+   * TODO get streaming rates
+   * @param ccyPairs seq of cccyPairs to stream from OneFrame
+   * @return TODO
+   */
+  def getRates(ccyPairs: Seq[String]): Any =
+{
+  throw new RuntimeException("NotImplemented yet")
+}
   private def removeOuterBrackets(ss: String, left: Char = '[', right: Char = ']'): String =
-    if (ss.contains(left) && ss.contains(right)) ss.drop(1).dropRight(1) else ss
+  if (ss.contains(left) && ss.contains(right)) ss.drop(1).dropRight(1) else ss
 
 
 
