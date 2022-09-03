@@ -52,11 +52,12 @@ final class ForexHttpSpec extends UnitSpec {
     }
 
   case class RateApi(from: String, to:String, price: Double, timestamp: OffsetDateTime)
-  implicit val blogDecoder: Decoder[RateApi] = deriveDecoder
+  implicit val rateApiDecoder: Decoder[RateApi] = deriveDecoder
 
   def toRateApi(jsonStr:String): RateApi =
   {
     import io.circe.parser.parse
+    
     val rateE: Either[ParsingFailure, Json] = parse(jsonStr)
     assert(rateE.isRight,s"${rateE.left} jsonStr=$jsonStr")
     val rateO = rateE.toOption.get.as[RateApi]
