@@ -21,10 +21,18 @@ final class OneFrameRatesSpec extends UnitSpec {
   }
 
 
-  it should "TODO be continuously updating rates with newer rates fetched from OneFrame" taggedAs NotImplementedYet in {
+  it should "be continuously updating rates with newer rates fetched from OneFrame" in {
 
-    fail(NotImplementedYet.toString)
-//    rss.getRate("NZDUSD")
+    val oneFrameRates: OneFrameRates = new OneFrameRates()
+    val rate1 = oneFrameRates.get("NZDJPY")
+    val rate2 = oneFrameRates.get("NZDJPY")
+    rate2.timestamp should be (rate1.timestamp)
+    Thread.sleep(2000)
+    val rate3 = oneFrameRates.get("NZDJPY")
+
+    rate3.timestamp should not be (rate1.timestamp)
+
+
 
   }
 }
