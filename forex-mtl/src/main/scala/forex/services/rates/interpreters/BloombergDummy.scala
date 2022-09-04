@@ -9,7 +9,7 @@ import forex.services.rates.{Algebra, errors}
 import forex.services.rates.errors._
 
 
-class BloomburgDummy[F[_]: Applicative] extends Algebra[F] {
+class BloombergDummy[F[_]: Applicative] extends Algebra[F] {
 
   override def getRate(pair: Rate.Pair): F[Error Either Rate]  = {
     errors.mkErrorInProvisionOfService("Bloomberg Not implemented").asLeft[Rate].pure[F]
