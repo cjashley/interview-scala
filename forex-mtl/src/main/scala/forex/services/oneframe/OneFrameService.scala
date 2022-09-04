@@ -6,6 +6,7 @@ import forex.http.HttpVerySimple
 import forex.services.rates.interpreters.{provisionOfService, usageOfService}
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.{Decoder, Json, ParsingFailure}
+import org.http4s.blaze.http.Url
 
 import java.io.InputStream
 import java.lang.System.Logger
@@ -19,18 +20,59 @@ import java.time.{Instant, ZonedDateTime}
     val ROOT = s"http://localhost:$port"
     val authReqProp: Seq[(String, String)] = Seq(Tuple2("token", auth))
 
-    case class OneFrameApiRate(from: String, to: String, bid: Double, ask: Double, price: Double, time_stamp: Instant)
 
-    implicit val rateDecoder: Decoder[OneFrameApiRate] = deriveDecoder
+    // TODO could crate a getRates method too, however get rate is a bridge to streaming rates that will really by used
+    def getRate(ccyPair: CcyPair): OneFrameRate = {
+      val url = s"$ROOT/rates?pair=$ccyPair"
+      val replyWithBrackets = HttpVerySimple.httpGet(url, reqProp = authReqProp) // i.e. "http://localhost:8080/rates?pair=NZDUSD"
+      val reply = removeOuterBrackets(replyWithBrackets)
+      val rateApi = OneFrameService.toRateApi(url, reply)
 
+      OneFrameService.asOneFrameRate(rateApi)
+    }
+
+    private def removeOuterBrackets(ss: String, left: Char = '[', right: Char = ']'): String = {
+      if (ss.contains(left) && ss.contains(right)) ss.drop(1).dropRight(1) else ss
+    }
+
+    def getStreamingRates(ccyPairs: CcyPairs): (Url, InputStream, CcyPairs) = {
+
+      log.log(Level.TRACE,"getStreamingRate:" + ccyPairs)
+
+      def makeHttpParams(parmName: String, ccyPairs: CcyPairs): String = {
+        val params = for (elem <- ccyPairs) yield {
+          parmName + elem
+        }
+        params.mkString("&")
+      }
+
+      val ccyPairsParams = makeHttpParams("pair=", ccyPairs)
+      val url = s"$ROOT/streaming/rates?$ccyPairsParams"
+
+      Tuple3(url,HttpVerySimple.httpGetStream(url, reqProp = authReqProp, readTimeout = 2000),ccyPairs) // i.e. "http://localhost:8080/streaming/rates?pair=NZDUSD"
+    }
+
+  }
+
+  object OneFrameService
+  {
 
     import io.circe.parser.parse
 
-    def toRateApi(url: String, jsonStr: String): OneFrameApiRate = {
-      case class OneFrameApiError(error: String)
-      implicit val errorDecoder: Decoder[OneFrameApiError] = deriveDecoder
+    case class OneFrameApiRate(from: String, to: String, bid: Double, ask: Double, price: Double, time_stamp: Instant)
+    implicit val rateDecoder: Decoder[OneFrameApiRate] = deriveDecoder
+    case class OneFrameApiError(error: String)
+    implicit val errorDecoder: Decoder[OneFrameApiError] = deriveDecoder
 
-      if (jsonStr.startsWith("""Not found""")) throw provisionOfService.ErrorInProvisionOfService("Not found: " + url)
+
+    def asOneFrameRate(rateApi: OneFrameService.OneFrameApiRate): OneFrameRate = {
+      val timestamp = Timestamp(rateApi.time_stamp.atOffset(ZonedDateTime.now().getOffset))
+      OneFrameRate(rateApi.from + rateApi.to, rateApi.price, timestamp)
+    }
+
+    def toRateApi(url: String, jsonStr: String): OneFrameApiRate = {
+
+      if (jsonStr.toUpperCase.startsWith("""NOT FOUND""")) throw provisionOfService.ErrorInProvisionOfService("Not found: " + url)
 
       val jsonE: Either[ParsingFailure, Json] = parse(jsonStr)
       val json = jsonE.getOrElse(throw provisionOfService.ErrorInProvisionOfService("invalid json: " + jsonStr))
@@ -48,39 +90,6 @@ import java.time.{Instant, ZonedDateTime}
 
       json.as[OneFrameApiRate].getOrElse(throw provisionOfService.ErrorInProvisionOfService("invalid json: " + jsonStr))
     }
-
-    // TODO could crate a getRates method too, however get rate is a bridge to streaming rates that will really by used
-    def getRate(ccyPair: CcyPair): OneFrameRate = {
-      val url = s"$ROOT/rates?pair=$ccyPair"
-      val replyWithBrackets = HttpVerySimple.httpGet(url, reqProp = authReqProp) // i.e. "http://localhost:8080/rates?pair=NZDUSD"
-      val reply = removeOuterBrackets(replyWithBrackets)
-      val rateApi = toRateApi(url, reply)
-      val timestamp = Timestamp(rateApi.time_stamp.atOffset(ZonedDateTime.now().getOffset))
-      OneFrameRate(rateApi.from + rateApi.to, rateApi.price, timestamp)
-    }
-
-
-    private def removeOuterBrackets(ss: String, left: Char = '[', right: Char = ']'): String = {
-      if (ss.contains(left) && ss.contains(right)) ss.drop(1).dropRight(1) else ss
-    }
-
-    def getStreamingRates(ccyPairs: CcyPairs): InputStream = {
-
-      log.log(Level.TRACE,"getStreamingRate:" + ccyPairs)
-
-      def makeHttpParams(parmName: String, ccyPairs: CcyPairs): String = {
-        val params = for (elem <- ccyPairs) yield {
-          parmName + elem
-        }
-        params.mkString("&")
-      }
-
-      val ccyPairsParams = makeHttpParams("pair=", ccyPairs)
-      val url = s"$ROOT/streaming/rates?$ccyPairsParams}"
-
-      HttpVerySimple.httpGetStream(url, reqProp = authReqProp, readTimeout = 2000) // i.e. "http://localhost:8080/streaming/rates?pair=NZDUSD"
-    }
-
   }
 
 

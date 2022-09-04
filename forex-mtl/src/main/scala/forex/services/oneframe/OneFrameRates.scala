@@ -4,6 +4,7 @@ import forex.domain.Ccy._
 import forex.domain.Timestamp
 
 import java.lang.System.Logger
+import java.lang.System.Logger.Level
 import java.time.Instant
 
 class OneFrameRates
@@ -51,7 +52,7 @@ class OneFrameRates
     }
   }
 
-  final class RatesStore {
+  final class RatesStore extends OneFrameRateConsumer {
 
     private val rates = new scala.collection.mutable.HashMap[CcyPair, RateWrapper]()
 
@@ -65,6 +66,31 @@ class OneFrameRates
 
     def getRate(ccyPair: CcyPair): Option[RateWrapper] = rates.get(ccyPair)
 
+    override def consumeRate(oneFrameRate: OneFrameRate): Unit =
+    {
+//      rates.get(oneFrameRate.ccyPair).getOrElse(rates.addOne(oneFrameRate.ccyPair -> RateWrapper(oneFrameRate))) // TODO understand why compiler warns with: discarded non-Unit value
+
+      rates.get(oneFrameRate.ccyPair) match
+      {
+        case Some(wr) => wr.setRate(oneFrameRate)
+        case None => rates += (oneFrameRate.ccyPair -> RateWrapper(oneFrameRate))
+      }
+
+    }
+
+    override def consumeRateErrors(ccyPairs: CcyPairs, throwable: Throwable): Unit =
+    {
+      var nonReportedPairs: Seq[CcyPair] = Seq()
+      for(ccyPair: CcyPair <- ccyPairs)
+        {
+          rates.get(ccyPair) match {
+            case Some(wr) => wr.setCurrentException(throwable)
+            case None => nonReportedPairs = nonReportedPairs :+ ccyPair
+          }
+        }
+
+      if (nonReportedPairs.nonEmpty) log.log(Level.WARNING,s"$nonReportedPairs had the error $throwable.getMessage")
+    }
   }
 
   //  @throws(classOf[provisionOfService.ErrorInProvisionOfService])
@@ -106,19 +132,15 @@ class OneFrameRates
 
     val initialOneFrameRate = oneFrame.getRate(ccyPair) // throws exceptions
     val wrappedRate =ratesStore.add(initialOneFrameRate)
-
-    val stream = oneFrame.getStreamingRates(Seq(ccyPair))
-
-    val streamReader = new OneFrameRateStreamReader(stream)
+    val streamReader = new OneFrameRateStreamReader(ratesStore, oneFrame.getStreamingRates(Seq(ccyPair)))
     streamReader.start()
 
     log.log(Logger.Level.DEBUG, "added" + initialOneFrameRate)
     wrappedRate
   }
 
-  def consumer() = {}
-
 }
+
 
 case class OneFrameRate(ccyPair: CcyPair, price: Double, timestamp: Timestamp)
 

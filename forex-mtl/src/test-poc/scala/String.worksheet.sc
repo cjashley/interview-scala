@@ -10,6 +10,23 @@ s.contains('[')
 s.contains(']')
 val noBrackets = s.drop(1).dropRight(1)
 
+import io.circe.{Decoder, Json, ParsingFailure}
+import io.circe.parser.parse
+
+var js = """[{"a":"val"},{"a":"val"}]"""
+js = """[{"from":"USD","to":"JPY","bid":0.5596033484836841,"ask":0.6937973188546951,"price":0.6267003336691896,"time_stamp":"2022-09-04T14:01:03.108Z"}]"""
+val jsonE: Either[ParsingFailure, Json] = parse(js)
+val json = jsonE.toOption.get
+json.isArray
+val a = json.asArray
+a.mkString
+
+
+for(v <- json.asArray) println(v.mkString)
+
+
+js = """[{"from":"NZD","to":"JPY","bid":0.9166090067283655,"ask":0.07903372827701083,"price":0.497821367502688165,"time_stamp":"2022-09-04T13:49:35.605Z"}]"""
+
 var ss = s
 if (ss.contains('[') && ss.contains(']')) ss.drop(1).dropRight(1) else ss
 ss = noBrackets
@@ -17,6 +34,8 @@ if (ss.contains('[') && ss.contains(']')) ss.drop(1).dropRight(1) else ss
 
 
 import forex.domain.Ccy
+import io.circe.{Json, ParsingFailure}
+import io.circe.parser.parse
 
 ss = ""
 var a = 0
