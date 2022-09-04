@@ -49,6 +49,8 @@ import forex.http.HttpVerySimple
         buffered.close() // end connection
     }
 
-    HttpVerySimple.httpGetStream(ROOT + "streaming/rates?pair=NZDUSD", streamReader, reqProp = authReqProp, readTimeout = 2000)
+    val stream = HttpVerySimple.httpGetStream(ROOT + "streaming/rates?pair=NZDUSD", reqProp = authReqProp, readTimeout = 2000)
+
+    streamReader(stream)
   }
 }

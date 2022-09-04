@@ -1,5 +1,5 @@
 import forex.UnitSpec
-import forex.services.oneframe.OneFrameService
+import forex.services.oneframe._
 import forex.services.rates.interpreters.{provisionOfService, usageOfService}
 
 class OneFrameServiceSpec extends UnitSpec {
@@ -25,9 +25,19 @@ class OneFrameServiceSpec extends UnitSpec {
       intercept[provisionOfService.ErrorInProvisionOfService] {oneFrameX.getRate("GBPNZD")}
   }
 
-  it should "TODO get a stream of rates from OneFrame" taggedAs NotImplementedYet in
+  it should "get a stream of rates from OneFrame" taggedAs NotImplementedYet in
   {
-    oneFrame.getStreamingRates(Seq ("NZDJPY","USDGBP") )
+    val streamReader = new OneFrameRateStreamReader(oneFrame.getStreamingRates(Seq ("NZDJPY","USDGBP")))
+    streamReader.start()
+
+    {
+      val streamReader2 = new OneFrameRateStreamReader(oneFrame.getStreamingRates(Seq("USDJPY")))
+      streamReader2.start()
+    }
+
+    Thread.sleep(5000)
+    streamReader.safeStop()
+    assert (streamReader.lineCount >= 4)
   }
 
 }

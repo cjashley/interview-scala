@@ -1,16 +1,14 @@
 package forex.services.oneframe
 
-import forex.domain.Ccy.{CcyPairs, _}
+import forex.domain.Ccy._
 import forex.domain.Timestamp
 
 import java.lang.System.Logger
 import java.time.Instant
 
-
 class OneFrameRates
   {
   private final val log: Logger = System.getLogger(this.getClass.getName)
-
   val oneFrame = new OneFrameService() // TODO rates need refreshing from streams
   val ratesStore = new RatesStore()
 
@@ -92,7 +90,7 @@ class OneFrameRates
     rate
   }
 
-  def fill(ccyPairs: CcyPairs) = {
+  def fill(ccyPairs: CcyPairs): Unit = {
     log.log(Logger.Level.TRACE, "filling rateStore "+ccyPairs)
 
     for (ccyPair <- ccyPairs) {
@@ -109,7 +107,10 @@ class OneFrameRates
     val initialOneFrameRate = oneFrame.getRate(ccyPair) // throws exceptions
     val wrappedRate =ratesStore.add(initialOneFrameRate)
 
-    oneFrame.getStreamingRates(Seq(ccyPair))
+    val stream = oneFrame.getStreamingRates(Seq(ccyPair))
+
+    val streamReader = new OneFrameRateStreamReader(stream)
+    streamReader.start()
 
     log.log(Logger.Level.DEBUG, "added" + initialOneFrameRate)
     wrappedRate

@@ -1,5 +1,7 @@
 package forex.http
 
+import java.io.InputStream
+
 object HttpVerySimple {
 
   /**
@@ -43,7 +45,7 @@ object HttpVerySimple {
 
   @throws(classOf[java.io.IOException])
   @throws(classOf[java.net.SocketTimeoutException])
-  def httpGetStream[R](url: String, reader: java.io.InputStream => R, connectTimeout: Int = 5000, readTimeout: Int = 0, requestMethod: String = "GET", reqProp: Seq[(String, String)] = Seq.empty): R = {
+  def httpGetStream(url: String, connectTimeout: Int = 5000, readTimeout: Int = 0, requestMethod: String = "GET", reqProp: Seq[(String, String)] = Seq.empty): InputStream = {
     val connection: HttpURLConnection = new URL(url).openConnection.asInstanceOf[HttpURLConnection]
     connection.setConnectTimeout(connectTimeout)
     connection.setReadTimeout(readTimeout) // TODO this setting seems to be ignored
@@ -51,11 +53,6 @@ object HttpVerySimple {
     for (prop <- reqProp) connection.setRequestProperty(prop._1, prop._2)
     val inputStream = connection.getInputStream
     //    val buffered = scala.io.Source.createBufferedSource(inputStream)
-    try {
-      reader(inputStream)
-    }
-    finally
-      inputStream.close()
 
     // Not sure, sockettime out was not thrown with my readTimeout set
     //    } catch {
@@ -63,6 +60,7 @@ object HttpVerySimple {
     //      case ste: java.net.SocketTimeoutException => ??? // handle this
     //    }
 
+    inputStream
   }
 
 }
