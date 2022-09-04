@@ -1,7 +1,7 @@
 package forex.services.oneframe
 
 import forex.domain.Ccy._
-import forex.domain.Timestamp
+import forex.services.rates.interpreters.provisionOfService
 
 import java.lang.System.Logger
 import java.lang.System.Logger.Level
@@ -108,9 +108,8 @@ class OneFrameRates
     val maybeRateWrapper = ratesStore.getRate(ccyPair)
     val rateWrapper = if (maybeRateWrapper.isEmpty) add(ccyPair) else maybeRateWrapper.get
     val rate = rateWrapper.getRate
-
-//    if(rateWrapper.getReadTimestamp.)
-    // TODO error   if r.timestamp makes rate stale i.e. older than 5 mins
+    val rateStaleDuration = OneFrameService.rateStaleDuration
+    if( rate.timestamp.plus(rateStaleDuration).isBefore(Instant.now)) throw provisionOfService.ErrorRateStale(s"$ccyPair price=${rate.price} is stale after $rateStaleDuration")
     log.log(Logger.Level.DEBUG, s"got $rate")
 
     rate
@@ -142,6 +141,6 @@ class OneFrameRates
 }
 
 
-case class OneFrameRate(ccyPair: CcyPair, price: Double, timestamp: Timestamp)
+case class OneFrameRate(ccyPair: CcyPair, price: Double, timestamp: Instant)
 
 

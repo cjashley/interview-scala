@@ -1,5 +1,7 @@
 val s = "[some bracketed text]"
-
+import java.time.Duration
+var rateStaleDuration = Duration.ofMinutes(1)
+rateStaleDuration.toString
 s.drop(1)
 s.take(1)
 s.takeRight(1)
@@ -12,6 +14,8 @@ val noBrackets = s.drop(1).dropRight(1)
 
 import io.circe.{Decoder, Json, ParsingFailure}
 import io.circe.parser.parse
+
+import java.time.Duration
 
 var js = """[{"a":"val"},{"a":"val"}]"""
 js = """[{"from":"USD","to":"JPY","bid":0.5596033484836841,"ask":0.6937973188546951,"price":0.6267003336691896,"time_stamp":"2022-09-04T14:01:03.108Z"}]"""

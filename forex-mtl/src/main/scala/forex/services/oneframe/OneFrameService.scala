@@ -1,7 +1,6 @@
   package forex.services.oneframe
 
 import forex.domain.Ccy.{CcyPair, CcyPairs}
-import forex.domain.Timestamp
 import forex.http.HttpVerySimple
 import forex.services.rates.interpreters.{provisionOfService, usageOfService}
 import io.circe.generic.semiauto.deriveDecoder
@@ -11,7 +10,7 @@ import org.http4s.blaze.http.Url
 import java.io.InputStream
 import java.lang.System.Logger
 import java.lang.System.Logger.Level
-import java.time.{Instant, ZonedDateTime}
+import java.time.{Duration, Instant}
 
   class OneFrameService(auth : String = "10dc303535874aeccc86a8251e6992f5") {
     private final val log: Logger = System.getLogger(this.getClass.getName)
@@ -56,6 +55,7 @@ import java.time.{Instant, ZonedDateTime}
 
   object OneFrameService
   {
+    var rateStaleDuration: Duration = Duration.ofMinutes(1)
 
     import io.circe.parser.parse
 
@@ -66,8 +66,8 @@ import java.time.{Instant, ZonedDateTime}
 
 
     def asOneFrameRate(rateApi: OneFrameService.OneFrameApiRate): OneFrameRate = {
-      val timestamp = Timestamp(rateApi.time_stamp.atOffset(ZonedDateTime.now().getOffset))
-      OneFrameRate(rateApi.from + rateApi.to, rateApi.price, timestamp)
+//      val timestamp = Timestamp(rateApi.time_stamp.atOffset(ZonedDateTime.now().getOffset))
+      OneFrameRate(rateApi.from + rateApi.to, rateApi.price, rateApi.time_stamp)
     }
 
     def toRateApi(url: String, jsonStr: String): OneFrameApiRate = {
@@ -78,7 +78,7 @@ import java.time.{Instant, ZonedDateTime}
       val json = jsonE.getOrElse(throw provisionOfService.ErrorInProvisionOfService("invalid json: " + jsonStr))
 
       if (jsonStr.startsWith("""{"error":""")) {
-        val errorApi = json.as[OneFrameApiError].getOrElse(throw provisionOfService.ErrorInProvisionOfService("invalid json: " + jsonStr))
+        val errorApi = json.as[OneFrameApiError].getOrElse(throw provisionOfService.ErrorInProvisionOfService("invalid [OneFrameApiError] json: " + jsonStr))
         errorApi.error match {
           case "Invalid Currency Pair" => throw usageOfService.ErrorWithCurrencyPairGiven(s"$jsonStr with url $url");
           case "No currency pair provided" => throw provisionOfService.ErrorInProvisionOfService(s"$jsonStr with url $url"); // users don't call directly, therefore its a provisioning error
@@ -88,7 +88,7 @@ import java.time.{Instant, ZonedDateTime}
         }
       }
 
-      json.as[OneFrameApiRate].getOrElse(throw provisionOfService.ErrorInProvisionOfService("invalid json: " + jsonStr))
+      json.as[OneFrameApiRate].getOrElse(throw provisionOfService.ErrorInProvisionOfService("invalid [OneFrameApiRate] json: " + jsonStr))
     }
   }
 

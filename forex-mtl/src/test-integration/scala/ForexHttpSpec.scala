@@ -16,6 +16,9 @@ final class ForexHttpSpec extends UnitSpec {
   val ROOT = s"http://localhost:$port/"
   val authReqProp: Seq[(String, String)] = Seq(Tuple2("token", "10dc303535874aeccc86a8251e6992f5")) // TODO API id
 
+  case class RateApi(from: String, to: String, price: Double, timestamp: OffsetDateTime)
+  implicit val rateApiDecoder: Decoder[RateApi] = deriveDecoder
+
   it should "get a rate from OneFrame if authorized" in
   {
     val reply = HttpVerySimple.httpGet(ROOT + "rates?from=NZD&to=USD", reqProp = authReqProp)
@@ -51,14 +54,10 @@ final class ForexHttpSpec extends UnitSpec {
       rate1.timestamp should not be rate2.timestamp
     }
 
-  case class RateApi(from: String, to:String, price: Double, timestamp: OffsetDateTime)
-  implicit val rateApiDecoder: Decoder[RateApi] = deriveDecoder
 
   def toRateApi(jsonStr:String): RateApi =
   {
-    import io.circe.parser.parse
-
-    val rateE: Either[ParsingFailure, Json] = parse(jsonStr)
+    val rateE: Either[ParsingFailure, Json] = io.circe.parser.parse(jsonStr)
     assert(rateE.isRight,s"${rateE.left} jsonStr=$jsonStr")
     val rateO = rateE.toOption.get.as[RateApi]
     assert(rateO.isRight, s"${rateO.left} jsonStr=$jsonStr")
