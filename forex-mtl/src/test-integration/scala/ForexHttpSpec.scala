@@ -39,7 +39,7 @@ final class ForexHttpSpec extends UnitSpec {
     }
 
   // get one rate and then a second rate for the same currency pair, timestamp should be different, hopefully this indicates price will be too
-  it should "TODO be updating rates with new prices" taggedAs NotImplementedYet in
+  it should "be updating rates with new prices" in
     {
       val reply1 = HttpVerySimple.httpGet(ROOT + "rates?from=JPY&to=USD", reqProp = authReqProp)
       Console println Instant.now
