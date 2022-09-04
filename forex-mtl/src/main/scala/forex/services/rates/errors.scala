@@ -1,5 +1,8 @@
 package forex.services.rates
 
+import java.lang.System.Logger
+import java.lang.System.Logger.Level
+
 object errors {
 
   sealed trait Error
@@ -8,8 +11,10 @@ object errors {
     final case class ErrorInUsageOfService(msg: String) extends Error
   }
 
+  private final val log: Logger = System.getLogger(this.getClass.getName)
+
   // TODO work around interpreters did not like returning their home made Error
-  def mkErrorInProvisionOfService(msg: String):Error = Error.ErrorInProvisionOfService(msg)
-  def mkErrorInUsageOfService(msg:String):Error = Error.ErrorInUsageOfService(msg)
+  def mkErrorInProvisionOfService(msg: String):Error = { val e = Error.ErrorInProvisionOfService(msg); log.log(Level.ERROR,e); e}
+  def mkErrorInUsageOfService(msg:String):Error = { val e = Error.ErrorInUsageOfService(msg); log.log(Level.ERROR,e); e}
 
 }

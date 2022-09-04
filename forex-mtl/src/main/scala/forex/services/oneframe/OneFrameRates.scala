@@ -1,35 +1,32 @@
 package forex.services.oneframe
 
-import forex.domain.Ccy._
-import forex.domain.{Timestamp}
+import forex.domain.Ccy.{CcyPairs, _}
+import forex.domain.Timestamp
 
 import java.lang.System.Logger
 import java.time.Instant
 
 
-case class oneFrameRate(ccyPair: CcyPair, price: Double, timestamp: Timestamp)
-
-
-object oneFrameRates  {
+class OneFrameRates
+  {
   private final val log: Logger = System.getLogger(this.getClass.getName)
 
   val oneFrame = new OneFrameService() // TODO rates need refreshing from streams
   val ratesStore = new RatesStore()
-  var ccyPairsToFetch: CcyPairs = Seq()
 
-  case class RateWrapper(protected var rate: oneFrameRate,
+  case class RateWrapper(protected var rate: OneFrameRate,
                          protected var readTimestamp: Instant,
                          protected var lastException: Option[Throwable],
                          protected var currentException: Option[Throwable]) {
 
-    def getRate: oneFrameRate = {
+    def getRate: OneFrameRate = {
       readTimestamp = Instant.now
       rate
     }
 
     def getReadTimestamp: Instant = readTimestamp
 
-    def setRate(rate: oneFrameRate): Unit = {
+    def setRate(rate: OneFrameRate): Unit = {
       if (currentException.isDefined) {
         lastException = currentException
         currentException = Option.empty
@@ -51,7 +48,7 @@ object oneFrameRates  {
 
   object RateWrapper{
 
-    def apply(rate: oneFrameRate):RateWrapper = {
+    def apply(rate: OneFrameRate):RateWrapper = {
       new RateWrapper(rate, Instant.now(), Option.empty, Option.empty)
     }
   }
@@ -60,7 +57,7 @@ object oneFrameRates  {
 
     private val rates = new scala.collection.mutable.HashMap[CcyPair, RateWrapper]()
 
-    def add(oneFrameRate: oneFrameRate):RateWrapper =
+    def add(oneFrameRate: OneFrameRate):RateWrapper =
     {
       val rateWrapper = RateWrapper(oneFrameRate)
       rates += (oneFrameRate.ccyPair -> rateWrapper)
@@ -81,7 +78,7 @@ object oneFrameRates  {
   //  @throws(classOf[usageOfService.ErrorInUsageOfService])
   //  @throws(classOf[usageOfService.ErrorWithCurrencyGiven])
   //  @throws(classOf[java.lang.Throwable])
-  def get(ccyPair: CcyPair): oneFrameRate = {
+  def get(ccyPair: CcyPair): OneFrameRate = {
     log.log(Logger.Level.TRACE, s"getting $ccyPair")
 
     val maybeRateWrapper = ratesStore.getRate(ccyPair)
@@ -95,27 +92,33 @@ object oneFrameRates  {
     rate
   }
 
-  def fill() = {
-    log.log(Logger.Level.TRACE, "filling rateStore")
+  def fill(ccyPairs: CcyPairs) = {
+    log.log(Logger.Level.TRACE, "filling rateStore "+ccyPairs)
 
-    for (ccyPair <- ccyPairsToFetch) {
+    for (ccyPair <- ccyPairs) {
       val oneFrameRate = oneFrame.getRate(ccyPair) // TODO maybe catch some exceptions
       ratesStore.add(oneFrameRate)
     }
 
-    log.log(Logger.Level.DEBUG, s"filled with ${ccyPairsToFetch.size} rates")
+    log.log(Logger.Level.DEBUG, s"filled with ${ccyPairs.size} rates")
   }
 
   def add(ccyPair: CcyPair): RateWrapper = {
     log.log(Logger.Level.TRACE, "adding" + ccyPair)
 
-    ccyPairsToFetch = ccyPairsToFetch :+ ccyPair
-    val initialOneFrameRate = oneFrame.getRate(ccyPair) // TODO maybe catch some exceptions
+    val initialOneFrameRate = oneFrame.getRate(ccyPair) // throws exceptions
     val wrappedRate =ratesStore.add(initialOneFrameRate)
+
+    oneFrame.getStreamingRates(Seq(ccyPair))
 
     log.log(Logger.Level.DEBUG, "added" + initialOneFrameRate)
     wrappedRate
   }
+
+  def consumer() = {}
+
 }
+
+case class OneFrameRate(ccyPair: CcyPair, price: Double, timestamp: Timestamp)
 
 

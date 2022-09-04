@@ -65,7 +65,8 @@ final class ForexHttpSpec extends UnitSpec {
     rateO.toOption.get
   }
 
-  it should "return invalid currency when given from XXX" taggedAs NotImplementedYet in
+  // TODO this error is made by http4s decoding parameters where Currency is invalid, spent ages trying to trap this. OneView will not get an invalid crrency but generates error correctly
+  it should "TODO return invalid currency when given from XXX" taggedAs NotImplementedYet in
   {
     // At the moment (until implemented), returns Server returned HTTP response code: 500 for URL: http://localhost:8081/rates?from=XXX&to=USD
     val reply1 = HttpVerySimple.httpGet(ROOT + "rates?from=XXX&to=USD", reqProp = authReqProp)

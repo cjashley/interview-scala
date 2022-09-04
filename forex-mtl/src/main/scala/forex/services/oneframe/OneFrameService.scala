@@ -10,8 +10,13 @@ import java.time.{Instant, ZonedDateTime}
 import forex.services.rates.interpreters.usageOfService
 import forex.services.rates.interpreters.provisionOfService
 
+import java.lang.System.Logger
+import java.lang.System.Logger.Level
+import java.util.Scanner
+
   class OneFrameService(auth : String = "10dc303535874aeccc86a8251e6992f5")
   {
+    private final val log: Logger = System.getLogger(this.getClass.getName)
 
     val port = 8080
     val ROOT = s"http://localhost:$port"
@@ -46,14 +51,14 @@ import forex.services.rates.interpreters.provisionOfService
     }
 
     // TODO could crate a getRates method too, however get rate is a bridge to streaming rates that will really by used
-    def getRate(ccyPair: CcyPair): oneFrameRate =
+    def getRate(ccyPair: CcyPair): OneFrameRate =
     {
       val url = s"$ROOT/rates?pair=$ccyPair"
       val replyWithBrackets = HttpVerySimple.httpGet(url, reqProp = authReqProp) // i.e. "http://localhost:8080/rates?pair=NZDUSD"
       val reply = removeOuterBrackets(replyWithBrackets)
       val rateApi = toRateApi(url,reply)
       val timestamp = Timestamp(rateApi.time_stamp.atOffset(ZonedDateTime.now().getOffset))
-      oneFrameRate(rateApi.from + rateApi.to, rateApi.price, timestamp)
+      OneFrameRate(rateApi.from + rateApi.to, rateApi.price, timestamp)
     }
 
     private def removeOuterBrackets(ss: String, left: Char = '[', right: Char = ']'): String =
@@ -61,78 +66,56 @@ import forex.services.rates.interpreters.provisionOfService
       if (ss.contains(left) && ss.contains(right)) ss.drop(1).dropRight(1) else ss
     }
 
-    // Two types of exception, retryable and not
-
     /**
-     * TODO get streaming rates
+     * get streaming rates
      *
      * @param ccyPairs seq of cccyPairs to stream from OneFrame
      * @return TODO
      */
      def getStreamingRates(ccyPairs: CcyPairs): Unit = {
-  throw new RuntimeException("not imp"+ccyPairs)
-  /*
-      def streamReader(stream: java.io.InputStream): Unit = {
-        val buffered = scala.io.Source.createBufferedSource(stream)
-
-        try {
-
-          var i = 0
-          while (buffered.hasNext && i < 1000) {
-            print(buffered.next())
-            if (math.floorMod(i, 100) == 0) println()
-            i += 1
-          }
-            try
-            {
-              val s:Scanner = new Scanner(stream).useDelimiter(String.join("|", "\\[\\{", "\\}\\,\\{", "\\}\\]")) // [{ or },{ or }]
-
-                var line = s.next();
-
-                if (!line.isBlank()) // line will be empty in between each data sequence [{,,,}][{,,}]
-                {
 
 
-                  line = line.mkString("{",line,"}")
-
-                  System.out.println(line);
-                  System.out.flush();
-
-                  // LOG.log(Level.INFO,line);
-
-//                  StringReader stringReader = new StringReader(line);
-//                  try (JsonReader jsonReader = Json.createReader(stringReader)) {
-//                    OneFrameRate rate = new OneFrameRate(jsonReader.readObject());
-//                    //								System.out.println("OneFrameRate "+rate); System.out.flush();
-//                    consumer.accept(rate);
-//                    consumeCount.getAndIncrement();
-                  }
-                }
-              }
-
-
-
-
-
-
-        }
-        finally {
-          buffered.close()
-        }
-      }
-
-      val ccyPairsParams = makeHttpParams("pair=", ccyPairs)
-
-
-      HttpVerySimple.httpGetStream(s"${ROOT}/streaming/rates?${ccyPairsParams}", streamReader, reqProp = authReqProp, readTimeout = 2000) // i.e. "http://localhost:8080/streaming/rates?pair=NZDUSD"
-
-       @unused  def makeHttpParams(parmName: String, ccyPairs: CcyPairs ): String =
-       {
-         val params = for (elem <- ccyPairs) yield {parmName + elem}
+       def makeHttpParams(parmName: String, ccyPairs: CcyPairs): String = {
+         val params = for (elem <- ccyPairs) yield {
+           parmName + elem
+         }
          params.mkString("&")
        }
 
-   */
+       val ccyPairsParams = makeHttpParams("pair=", ccyPairs)
+       val url = s"${ROOT}/streaming/rates?${ccyPairsParams}"
+       HttpVerySimple.httpGetStream(url, streamReader, reqProp = authReqProp, readTimeout = 2000) // i.e. "http://localhost:8080/streaming/rates?pair=NZDUSD"
+
+       def streamReader(stream: java.io.InputStream): Unit = {
+        try
+        {
+          val scanner:Scanner = new Scanner(stream).useDelimiter(String.join("|", "\\[\\{", "\\}\\,\\{", "\\}\\]")) // [{ or },{ or }]
+
+          try {
+            var line = scanner.next();
+
+            if (!line.isBlank()) // line will be empty in between each data sequence [{,,,}][{,,}]
+            {
+              line = line.mkString("{",line,"}") // put brackets back
+
+              System.out.println(line); // TODO prefer until loging changed to one line output
+              System.out.flush();
+              log.log(Level.DEBUG,line);
+
+              val rateApi = toRateApi(url,line) // TODO think about where exceptions go and how they are caught and handel
+              if(rateApi.price.equals("")){}
+//              consumer
+            }
+          }
+          finally
+            {
+              scanner.close()
+            }
+        }
+       finally stream.close()
+     }
+
+
      }
 
   }

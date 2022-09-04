@@ -3,9 +3,8 @@ package forex.services.rates.interpreters
 import cats.Applicative
 import cats.syntax.applicative._
 import cats.syntax.either._
-import forex.domain.Ccy.CcyPair
+import forex.domain.Ccy.{CcyPair, CcyPairs}
 import forex.domain._
-import forex.services.oneframe._
 import forex.services.rates.Algebra
 import forex.services.rates.errors._
 
@@ -15,6 +14,7 @@ import forex.services.rates.interpreters.provisionOfService.{ErrorInProvisionOfS
 import forex.services.rates.interpreters.usageOfService.{ErrorInUsageOfService, ErrorWithCurrencyPairGiven}
 
 import java.lang.System.Logger.Level
+import forex.services.oneframe.OneFrameRates
 
 object provisionOfService
 {
@@ -34,7 +34,12 @@ object usageOfService
 // returns [Rate] or [Error.ErrorInUsageOfService]) or [Error.ErrorInProvisionOfService])
 class OneFrameDummy[F[_]: Applicative] extends Algebra[F] {
 
+  val oneFrameRates:OneFrameRates = new OneFrameRates() //
+  def fill(ccyPairs: CcyPairs) = oneFrameRates.fill(ccyPairs)
+
+
   private final val log: Logger = System.getLogger(this.getClass.getName)
+
 
   override def getRate(pair: Rate.Pair): F[Error Either Rate] = {
 
