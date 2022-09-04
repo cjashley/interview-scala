@@ -1,17 +1,16 @@
-  package forex.services.rates
+  package forex.services.oneframe
 
-  import forex.domain.Ccy.{CcyPair, CcyPairs}
-  import forex.domain.Timestamp
-  import forex.http.HttpVerySimple
-  import io.circe.generic.semiauto.deriveDecoder
-  import io.circe.{Decoder, Json, ParsingFailure}
+import forex.domain.Ccy.{CcyPair, CcyPairs}
+import forex.domain.Timestamp
+import forex.http.HttpVerySimple
+import io.circe.generic.semiauto.deriveDecoder
+import io.circe.{Decoder, Json, ParsingFailure}
 
-  import java.time.{Instant, ZonedDateTime}
-  import java.util.Scanner
+import java.time.{Instant, ZonedDateTime}
+import scala.annotation.unused
 
   class OneFrameService(auth : String = "10dc303535874aeccc86a8251e6992f5")
   {
-
 
     val port = 8080
     val ROOT = s"http://localhost:$port"
@@ -30,16 +29,14 @@
 
       rateO.toOption.get
     }
-
-    import io.circe.parser.parse
     // TODO could crate a getRates method too, however get rate is a bridge to streaming rates that will really by used
-    def getRate(ccyPair: CcyPair): Rate =
+    def getRate(ccyPair: CcyPair): oneFrameRate =
     {
-      val replyWithBrackets = HttpVerySimple.httpGet(ROOT + s"rates?pair=$ccyPair", reqProp = authReqProp) // i.e. "http://localhost:8080/rates?pair=NZDUSD"
+      val replyWithBrackets = HttpVerySimple.httpGet(s"$ROOT/rates?pair=$ccyPair", reqProp = authReqProp) // i.e. "http://localhost:8080/rates?pair=NZDUSD"
       val reply = removeOuterBrackets(replyWithBrackets)
       val rateApi = toRateApi(reply)
       val timestamp = Timestamp(rateApi.time_stamp.atOffset(ZonedDateTime.now().getOffset))
-      Rate(rateApi.from + rateApi.to, rateApi.price, timestamp)
+      oneFrameRate(rateApi.from + rateApi.to, rateApi.price, timestamp)
     }
 
     private def removeOuterBrackets(ss: String, left: Char = '[', right: Char = ']'): String =
@@ -55,7 +52,7 @@
      * @param ccyPairs seq of cccyPairs to stream from OneFrame
      * @return TODO
      */
-    def getStreamingRates(ccyPairs: CcyPairs): Unit = {
+     def getStreamingRates(ccyPairs: CcyPairs): Unit = {
       throw new RuntimeException("NotImplemented yet "+ccyPairs)
 
       /*
@@ -121,7 +118,7 @@
 */
     }
 
-    private def makeHttpParams(parmName: String, ccyPairs: CcyPairs ) =
+    @unused  def makeHttpParams(parmName: String, ccyPairs: CcyPairs ): String =
     {
       val params = for (elem <- ccyPairs) yield {parmName + elem}
       params.mkString("&")

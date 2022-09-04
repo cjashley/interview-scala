@@ -27,7 +27,7 @@ class CurrencySpec extends UnitSpec with should.Matchers {
 
   // test for learning scala, not needed unless changed to more specific exception
   it should "throw MatchError if invalid currency" in {
-    intercept[NoSuchElementException] {
+    intercept[MatchError] {
       Currency.fromString("UNKNOWN")
     }
   }

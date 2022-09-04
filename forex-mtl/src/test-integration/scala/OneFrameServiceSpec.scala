@@ -1,5 +1,5 @@
 import forex.UnitSpec
-import forex.services.rates.OneFrameService
+import forex.services.oneframe.OneFrameService
 
 class OneFrameServiceSpec extends UnitSpec {
 

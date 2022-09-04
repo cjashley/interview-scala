@@ -27,7 +27,7 @@ final class ForexHttpSpec extends UnitSpec {
     rate.price should not be 100 // was hard coded price to start with
   }
 
-  it should "reply with an error when request has no API token"  taggedAs NotImplementedYet in
+  it should "TODO reply with an error when request has no API token "  taggedAs NotImplementedYet in
     {
 
       val replyNoAuth = HttpVerySimple.httpGet(ROOT + "rates?from=NZD&to=USD") // i.e. "http://localhost:8080/rates?pair=NZDUSD"
@@ -36,7 +36,7 @@ final class ForexHttpSpec extends UnitSpec {
     }
 
   // get one rate and then a second rate for the same currency pair, timestamp should be different, hopefully this indicates price will be too
-  it should "be updating rates with new prices" taggedAs NotImplementedYet in
+  it should "TODO be updating rates with new prices" taggedAs NotImplementedYet in
     {
       val reply1 = HttpVerySimple.httpGet(ROOT + "rates?from=JPY&to=USD", reqProp = authReqProp)
       Console println Instant.now
@@ -57,7 +57,7 @@ final class ForexHttpSpec extends UnitSpec {
   def toRateApi(jsonStr:String): RateApi =
   {
     import io.circe.parser.parse
-    
+
     val rateE: Either[ParsingFailure, Json] = parse(jsonStr)
     assert(rateE.isRight,s"${rateE.left} jsonStr=$jsonStr")
     val rateO = rateE.toOption.get.as[RateApi]
