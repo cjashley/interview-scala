@@ -7,7 +7,8 @@ import io.circe.generic.semiauto.deriveDecoder
 import io.circe.{Decoder, Json, ParsingFailure}
 
 import java.time.{Instant, ZonedDateTime}
-import scala.annotation.unused
+import forex.services.rates.interpreters.usageOfService
+import forex.services.rates.interpreters.provisionOfService
 
   class OneFrameService(auth : String = "10dc303535874aeccc86a8251e6992f5")
   {
@@ -15,26 +16,42 @@ import scala.annotation.unused
     val port = 8080
     val ROOT = s"http://localhost:$port"
     val authReqProp: Seq[(String, String)] = Seq(Tuple2("token", auth))
-    case class OneFrameRateApi(from: String, to: String, bid: Double, ask: Double, price: Double, time_stamp: Instant)
-    implicit val rateDecoder: Decoder[OneFrameRateApi] = deriveDecoder
+    case class OneFrameApiRate(from: String, to: String, bid: Double, ask: Double, price: Double, time_stamp: Instant)
+    implicit val rateDecoder: Decoder[OneFrameApiRate] = deriveDecoder
 
-    def toRateApi(jsonStr: String): OneFrameRateApi =
+
+    import io.circe.parser.parse
+    def toRateApi(url:String, jsonStr: String): OneFrameApiRate =
     {
-      import io.circe.parser.parse
-      val rateE: Either[ParsingFailure, Json] = parse(jsonStr)
-      assert(rateE.isRight, s"${rateE.left} jsonStr=$jsonStr")
+      case class OneFrameApiError(error: String)
+      implicit val errorDecoder: Decoder[OneFrameApiError] = deriveDecoder
 
-      val rateO = rateE.toOption.get.as[OneFrameRateApi]
-      assert(rateO.isRight, s"${rateO.left} jsonStr=$jsonStr")
+      if (jsonStr.startsWith("""Not found""")) throw provisionOfService.ErrorInProvisionOfService("Not found: "+url)
 
-      rateO.toOption.get
+      val jsonE: Either[ParsingFailure, Json] = parse(jsonStr)
+      val json = jsonE.getOrElse(throw provisionOfService.ErrorInProvisionOfService("invalid json: "+jsonStr))
+
+      if (jsonStr.startsWith("""{"error":""")) {
+        val errorApi = json.as[OneFrameApiError].getOrElse(throw provisionOfService.ErrorInProvisionOfService("invalid json: "+jsonStr))
+        errorApi.error match {
+          case "Invalid Currency Pair"      => throw usageOfService.ErrorWithCurrencyPairGiven(s"$jsonStr with url $url");
+          case "No currency pair provided"  => throw provisionOfService.ErrorInProvisionOfService(s"$jsonStr with url $url"); // users don't call directly, therefore its a provisioning error
+          case "Quota reached"              => throw provisionOfService.ErrorInProvisionOfService(s"$jsonStr said to be 1,0000");
+          case "Forbidden"                  => throw provisionOfService.ErrorInProvisionOfService(s"$jsonStr likely invalid auth token");
+          case _                            => throw provisionOfService.ErrorInProvisionOfService(s"$jsonStr is not coded for in service");
+        }
+      }
+
+      json.as[OneFrameApiRate].getOrElse(throw provisionOfService.ErrorInProvisionOfService("invalid json: "+jsonStr))
     }
+
     // TODO could crate a getRates method too, however get rate is a bridge to streaming rates that will really by used
     def getRate(ccyPair: CcyPair): oneFrameRate =
     {
-      val replyWithBrackets = HttpVerySimple.httpGet(s"$ROOT/rates?pair=$ccyPair", reqProp = authReqProp) // i.e. "http://localhost:8080/rates?pair=NZDUSD"
+      val url = s"$ROOT/rates?pair=$ccyPair"
+      val replyWithBrackets = HttpVerySimple.httpGet(url, reqProp = authReqProp) // i.e. "http://localhost:8080/rates?pair=NZDUSD"
       val reply = removeOuterBrackets(replyWithBrackets)
-      val rateApi = toRateApi(reply)
+      val rateApi = toRateApi(url,reply)
       val timestamp = Timestamp(rateApi.time_stamp.atOffset(ZonedDateTime.now().getOffset))
       oneFrameRate(rateApi.from + rateApi.to, rateApi.price, timestamp)
     }
@@ -53,9 +70,8 @@ import scala.annotation.unused
      * @return TODO
      */
      def getStreamingRates(ccyPairs: CcyPairs): Unit = {
-      throw new RuntimeException("NotImplemented yet "+ccyPairs)
-
-      /*
+  throw new RuntimeException("not imp"+ccyPairs)
+  /*
       def streamReader(stream: java.io.InputStream): Unit = {
         val buffered = scala.io.Source.createBufferedSource(stream)
 
@@ -75,13 +91,7 @@ import scala.annotation.unused
 
                 if (!line.isBlank()) // line will be empty in between each data sequence [{,,,}][{,,}]
                 {
-                  //  handling {"error":"No currency pair provided"}
-                  //  handling {"error":"Quota reached"}
-                  //  handling {"error":"Invalid Currency Pair"}
-                  if (line.startsWith("{")) {
-                    if (line.contains("Invalid Currency Pair")) throw new OneFrameCurrencyPairsException(currencyPairs);
-                    if (line.contains("No currency pair provided")) throw new OneFrameException("No currency pair provided");
-                  }
+
 
                   line = line.mkString("{",line,"}")
 
@@ -90,12 +100,12 @@ import scala.annotation.unused
 
                   // LOG.log(Level.INFO,line);
 
-                  StringReader stringReader = new StringReader(line);
-                  try (JsonReader jsonReader = Json.createReader(stringReader)) {
-                    OneFrameRate rate = new OneFrameRate(jsonReader.readObject());
-                    //								System.out.println("OneFrameRate "+rate); System.out.flush();
-                    consumer.accept(rate);
-                    consumeCount.getAndIncrement();
+//                  StringReader stringReader = new StringReader(line);
+//                  try (JsonReader jsonReader = Json.createReader(stringReader)) {
+//                    OneFrameRate rate = new OneFrameRate(jsonReader.readObject());
+//                    //								System.out.println("OneFrameRate "+rate); System.out.flush();
+//                    consumer.accept(rate);
+//                    consumeCount.getAndIncrement();
                   }
                 }
               }
@@ -115,14 +125,16 @@ import scala.annotation.unused
 
 
       HttpVerySimple.httpGetStream(s"${ROOT}/streaming/rates?${ccyPairsParams}", streamReader, reqProp = authReqProp, readTimeout = 2000) // i.e. "http://localhost:8080/streaming/rates?pair=NZDUSD"
-*/
-    }
 
-    @unused  def makeHttpParams(parmName: String, ccyPairs: CcyPairs ): String =
-    {
-      val params = for (elem <- ccyPairs) yield {parmName + elem}
-      params.mkString("&")
-    }
+       @unused  def makeHttpParams(parmName: String, ccyPairs: CcyPairs ): String =
+       {
+         val params = for (elem <- ccyPairs) yield {parmName + elem}
+         params.mkString("&")
+       }
+
+   */
+     }
+
   }
 
 

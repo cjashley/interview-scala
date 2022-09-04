@@ -1,5 +1,5 @@
 import forex.UnitSpec
-import forex.services.oneframe.{oneFrameRates}
+import forex.services.oneframe.oneFrameRates
 
 final class OneFrameRatesSpec extends UnitSpec {
 "A RateStoreSupplier" should "should supply up to date rates"
@@ -14,7 +14,8 @@ final class OneFrameRatesSpec extends UnitSpec {
       }
   }
 
-  it should "be continuously updating rates with newer rates fetched from OneFrame" taggedAs NotImplementedYet in {
+
+  it should "TODO be continuously updating rates with newer rates fetched from OneFrame" taggedAs NotImplementedYet in {
 
     fail(NotImplementedYet.toString)
 //    rss.getRate("NZDUSD")
